@@ -13,16 +13,29 @@ async function debug() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 
-    const allRequests = [];
+    const captured = [];
 
-    page.on('request', (request) => {
-      const url = request.url();
-      // Skip obvious noise
-      if (url.match(/\.(png|jpg|jpeg|svg|woff|woff2|css|ico)(\?|$)/i)) return;
-      allRequests.push({
-        method: request.method(),
-        url: url
-      });
+    // Capture ALL POST responses from graphql AND sp.uitinvlaanderen.be
+    page.on('response', async (response) => {
+      const url = response.url();
+      const method = response.request().method();
+      
+      if (
+        (url.includes('/api/graphql') || url.includes('sp.uitinvlaanderen.be')) 
+        && method === 'POST'
+      ) {
+        try {
+          const text = await response.text();
+          captured.push({
+            url,
+            status: response.status(),
+            requestBody: response.request().postData(),
+            responseBody: text.substring(0, 3000)
+          });
+        } catch (e) {
+          captured.push({ url, error: e.message });
+        }
+      }
     });
 
     const today = new Date().toISOString().split('T')[0];
@@ -32,18 +45,23 @@ async function debug() {
     console.log('Navigating to:', url);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    for (let i = 0; i < 4; i++) {
+    // Scroll slowly multiple times to trigger all lazy loads
+    for (let i = 0; i < 6; i++) {
       await page.waitForTimeout(2000);
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     }
     await page.waitForTimeout(3000);
 
-    console.log(`\nCaptured ${allRequests.length} requests (excluding images/css/fonts)\n`);
-    allRequests.forEach((r, i) => {
-      console.log(`${i}. [${r.method}] ${r.url}`);
+    console.log(`\nCaptured ${captured.length} API responses\n`);
+    captured.forEach((c, i) => {
+      console.log(`\n=== CALL ${i} ===`);
+      console.log('URL:', c.url);
+      console.log('Status:', c.status);
+      console.log('REQUEST:', c.requestBody?.substring(0, 500));
+      console.log('RESPONSE:', c.responseBody);
     });
 
-    fs.writeFileSync('debug-info.json', JSON.stringify(allRequests, null, 2));
+    fs.writeFileSync('debug-info.json', JSON.stringify(captured, null, 2));
     console.log('\n✓ Saved debug-info.json');
 
   } catch (error) {
