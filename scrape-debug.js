@@ -13,21 +13,31 @@ async function debug() {
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 
-    const apiCalls = [];
+    const graphqlCalls = [];
 
+    // Capture REQUESTS (so we see the query being sent)
+    page.on('request', (request) => {
+      if (request.url().includes('/api/graphql') && request.method() === 'POST') {
+        graphqlCalls.push({
+          type: 'request',
+          postData: request.postData()
+        });
+      }
+    });
+
+    // Capture RESPONSES (so we see the data coming back)
     page.on('response', async (response) => {
-      const url = response.url();
-      const contentType = response.headers()['content-type'] || '';
-      if (contentType.includes('application/json') && response.status() === 200) {
+      if (response.url().includes('/api/graphql')) {
         try {
           const json = await response.json();
-          apiCalls.push({
-            url,
-            preview: JSON.stringify(json).substring(0, 1500)
+          const hasEvents = JSON.stringify(json).toLowerCase().includes('activit') ||
+                             JSON.stringify(json).toLowerCase().includes('event');
+          graphqlCalls.push({
+            type: 'response',
+            hasEventData: hasEvents,
+            preview: JSON.stringify(json).substring(0, 2000)
           });
-        } catch (e) {
-          // not parseable JSON, skip
-        }
+        } catch (e) {}
       }
     });
 
@@ -36,19 +46,25 @@ async function debug() {
     const url = `https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=${today}&dateTo=${nextWeek}&distance=15&price=free`;
 
     console.log('Navigating to:', url);
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 }).catch(() => {
-      console.log('(networkidle0 timed out, continuing anyway)');
-    });
-    await page.waitForTimeout(3000);
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    console.log(`\nCaptured ${apiCalls.length} JSON API calls`);
-    apiCalls.forEach((call, i) => {
-      console.log(`\n--- API CALL ${i} ---`);
-      console.log('URL:', call.url);
-      console.log('Preview:', call.preview);
+    // Wait longer, and scroll down to trigger lazy-loaded content
+    await page.waitForTimeout(2000);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(4000);
+
+    console.log(`\nCaptured ${graphqlCalls.length} GraphQL request/response pairs`);
+    graphqlCalls.forEach((call, i) => {
+      console.log(`\n--- CALL ${i} (${call.type}) ---`);
+      if (call.type === 'request') {
+        console.log('POST BODY:', call.postData);
+      } else {
+        console.log('Has event data:', call.hasEventData);
+        console.log('Preview:', call.preview);
+      }
     });
 
-    fs.writeFileSync('debug-info.json', JSON.stringify(apiCalls, null, 2));
+    fs.writeFileSync('debug-info.json', JSON.stringify(graphqlCalls, null, 2));
     console.log('\n✓ Saved debug-info.json');
 
   } catch (error) {
