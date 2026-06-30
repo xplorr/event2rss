@@ -1,5 +1,4 @@
 name: Scrape Events to RSS
-
 on:
   schedule:
     - cron: '0 2 * * *'  # Daily at 2 AM UTC
@@ -8,36 +7,36 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          
-      - name: Cache Puppeteer
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/puppeteer
-          key: ${{ runner.os }}-puppeteer
-      
+
+      - name: Install Chromium (system package, fast & reliable)
+        run: sudo apt-get update && sudo apt-get install -y chromium-browser
+
       - name: Install dependencies
-        run: npm install puppeteer xml
-      
-      - name: Scrape and convert to JSON
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: 'true'
+        run: |
+          npm config set fetch-retries 3
+          npm config set fetch-retry-mintimeout 5000
+          npm config set fetch-retry-maxtimeout 20000
+          npm install puppeteer xml
+        timeout-minutes: 5
+
+      - name: Scrape (debug mode)
         run: node scrape-debug.js
-      
-      - name: Convert JSON to RSS
-        run: node json-to-rss.js
-        continue-on-error: true
-      
-      - name: Commit and push RSS
+        timeout-minutes: 3
+
+      - name: Commit and push debug output
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add rss/events.xml || true
-          git add data/events.json || true
           git add debug-info.json || true
-          git commit -m "Update events RSS $(date)" || true
+          git commit -m "Update debug info $(date)" || true
           git push
