@@ -36,5 +36,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add rss/events.xml || true
+          git add data/events.json || true
+          git add debug-info.json || true
           git commit -m "Update events RSS $(date)" || true
           git push
