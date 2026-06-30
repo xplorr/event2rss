@@ -1,0 +1,13 @@
+{
+  "name": "events-rss-scraper",
+  "version": "1.0.0",
+  "description": "Scrape events and generate RSS feed",
+  "main": "scrape.js",
+  "scripts": {
+    "start": "node scrape.js && node json-to-rss.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0",
+    "xml": "^1.0.1"
+  }
+}
