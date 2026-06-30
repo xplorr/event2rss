@@ -20,7 +20,7 @@ jobs:
         run: npm install puppeteer xml
       
       - name: Scrape and convert to JSON
-        run: node scrape.js
+        run: node scrape-debug.js
       
       - name: Convert JSON to RSS
         run: node json-to-rss.js
