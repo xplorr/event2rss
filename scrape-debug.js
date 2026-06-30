@@ -15,27 +15,23 @@ async function debug() {
 
     const graphqlCalls = [];
 
-    // Capture REQUESTS (so we see the query being sent)
     page.on('request', (request) => {
       if (request.url().includes('/api/graphql') && request.method() === 'POST') {
-        graphqlCalls.push({
-          type: 'request',
-          postData: request.postData()
-        });
+        let opName = 'unknown';
+        try {
+          opName = JSON.parse(request.postData()).operationName;
+        } catch (e) {}
+        graphqlCalls.push({ type: 'request', operationName: opName, postData: request.postData() });
       }
     });
 
-    // Capture RESPONSES (so we see the data coming back)
     page.on('response', async (response) => {
       if (response.url().includes('/api/graphql')) {
         try {
           const json = await response.json();
-          const hasEvents = JSON.stringify(json).toLowerCase().includes('activit') ||
-                             JSON.stringify(json).toLowerCase().includes('event');
           graphqlCalls.push({
             type: 'response',
-            hasEventData: hasEvents,
-            preview: JSON.stringify(json).substring(0, 2000)
+            preview: JSON.stringify(json).substring(0, 2500)
           });
         } catch (e) {}
       }
@@ -48,18 +44,25 @@ async function debug() {
     console.log('Navigating to:', url);
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-    // Wait longer, and scroll down to trigger lazy-loaded content
-    await page.waitForTimeout(2000);
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await page.waitForTimeout(4000);
+    // Wait, scroll, wait again — repeat a few times to catch lazy/infinite-scroll triggers
+    for (let i = 0; i < 4; i++) {
+      await page.waitForTimeout(2000);
+      await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    }
+    await page.waitForTimeout(3000);
 
-    console.log(`\nCaptured ${graphqlCalls.length} GraphQL request/response pairs`);
+    console.log(`\nCaptured ${graphqlCalls.length} GraphQL request/response entries`);
+    console.log('\n=== ALL OPERATION NAMES SEEN ===');
+    graphqlCalls
+      .filter(c => c.type === 'request')
+      .forEach(c => console.log('-', c.operationName));
+
     graphqlCalls.forEach((call, i) => {
-      console.log(`\n--- CALL ${i} (${call.type}) ---`);
+      console.log(`\n--- ENTRY ${i} (${call.type}) ---`);
       if (call.type === 'request') {
+        console.log('Operation:', call.operationName);
         console.log('POST BODY:', call.postData);
       } else {
-        console.log('Has event data:', call.hasEventData);
         console.log('Preview:', call.preview);
       }
     });
