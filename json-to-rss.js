@@ -29,31 +29,42 @@ async function generateRSS() {
 
     // Build RSS items
     let itemsXml = '';
-    eventsData.forEach(event => {
-      const imageTag = event.image ? `<image url="${escapeXml(event.image)}" />` : '';
+    eventsData.forEach((event, index) => {
+      // Create image tag if image exists
+      let imageXml = '';
+      if (event.image && event.image.trim() !== '') {
+        imageXml = `
+      <media:content 
+        url="${escapeXml(event.image)}" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="${escapeXml(event.image)}" />`;
+      }
       
       itemsXml += `
     <item>
       <title>${escapeXml(event.title)}</title>
       <link>${escapeXml(event.link)}</link>
-      <guid isPermaLink="false">${escapeXml(event.id)}</guid>
+      <guid isPermaLink="false">event-${index}-${escapeXml(event.id)}</guid>
       <description><![CDATA[
+        ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px; height: auto;" alt="${escapeXml(event.title)}" /></p>` : ''}
         <p><strong>Date:</strong> ${escapeXml(event.date)}</p>
         <p><strong>Location:</strong> ${escapeXml(event.location)}</p>
         <p><strong>Organizer:</strong> ${escapeXml(event.organizer)}</p>
         <p><strong>Price:</strong> ${escapeXml(event.price)}</p>
         <p>${escapeXml(event.description)}</p>
-        ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px;" /></p>` : ''}
       ]]></description>
       <pubDate>${formatDate(event.date)}</pubDate>
       <category>Events</category>
-      ${imageTag}
+      ${imageXml}
     </item>`;
     });
 
-    // Build complete RSS feed
+    // Build complete RSS feed with media namespace
     const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<rss version="2.0" 
+  xmlns:content="http://purl.org/rss/1.0/modules/content/"
+  xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
     <title>Uit in Vlaanderen - Stekene Events</title>
     <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene</link>
