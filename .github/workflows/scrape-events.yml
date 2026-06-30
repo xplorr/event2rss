@@ -1,0 +1,34 @@
+name: Scrape Events to RSS
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:     # Manual trigger option
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: npm install puppeteer xml
+      
+      - name: Scrape and convert to JSON
+        run: node scrape.js
+      
+      - name: Convert JSON to RSS
+        run: node json-to-rss.js
+      
+      - name: Commit and push RSS
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add rss/events.xml || true
+          git commit -m "Update events RSS $(date)" || true
+          git push
