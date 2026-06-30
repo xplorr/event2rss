@@ -1,18 +1,20 @@
 [
   {
-    "url": "https://www.uitinvlaanderen.be/_nuxt/builds/meta/258a5927-cacd-4883-99c8-43f49eb88acb.json",
-    "preview": "{\"id\":\"258a5927-cacd-4883-99c8-43f49eb88acb\",\"timestamp\":1782822624088,\"matcher\":{\"static\":{},\"wildcard\":{},\"dynamic\":{}},\"prerendered\":[]}"
+    "type": "request",
+    "postData": "{\"operationName\":\"GetMe\",\"variables\":{},\"query\":\"query GetMe {\\n  me {\\n    id\\n    locale\\n    givenName\\n    firstName\\n    postalCode\\n    hasUitpasLoyalty\\n    hasMuseumpasSubscription\\n    name\\n    email\\n    __typename\\n  }\\n}\"}"
   },
   {
-    "url": "https://o424400.ingest.sentry.io/api/5721467/envelope/?sentry_version=7&sentry_key=1afe9aaa0bcc4de2b50d6f5a13710ba8&sentry_client=sentry.javascript.browser%2F10.32.1",
-    "preview": "{}"
-  },
-  {
-    "url": "https://www.uitinvlaanderen.be/api/graphql",
+    "type": "response",
+    "hasEventData": false,
     "preview": "{\"errors\":[{\"message\":\"Access denied! You need to be authenticated to perform this action!\",\"locations\":[{\"line\":2,\"column\":3}],\"path\":[\"me\"],\"extensions\":{\"code\":\"UNAUTHENTICATED\"}}],\"data\":null}"
   },
   {
-    "url": "https://www.uitinvlaanderen.be/api/graphql",
+    "type": "request",
+    "postData": "{\"operationName\":\"GetArticleInEventList\",\"variables\":{\"limit\":1,\"eventTypes\":[\"0.28.0.0.0\",\"0.59.0.0.0\",\"0.57.0.0.0\",\"0.3.1.0.1\",\"0.17.0.0.0\",\"1.50.0.0.0\",\"0.50.4.0.0\",\"0.50.4.0.0\",\"0.6.0.0.0\",\"0.50.4.0.0\"],\"promoted\":true,\"sort\":\"stickyInSearchResults\"},\"query\":\"query GetArticleInEventList($limit: Float, $eventTypes: [String!], $promoted: Boolean, $target: [EventTarget!], $sort: String) {\\n  articles(\\n    limit: $limit\\n    eventTypes: $eventTypes\\n    promoted: $promoted\\n    target: $target\\n    sort: $sort\\n  ) {\\n    data {\\n      id\\n      title\\n      intro\\n      image {\\n        alt\\n        caption\\n        styles {\\n          style_12_12_xl\\n          style_12_12_lg\\n          style_12_12_md\\n          style_12_12_sm\\n          style_lazy\\n          __typename\\n        }\\n        __typename\\n      }\\n      targetGroup\\n      path\\n      benefit\\n      isLiked\\n      campaign {\\n        technicalName\\n        __typename\\n      }\\n      __typename\\n    }\\n    __typename\\n  }\\n}\"}"
+  },
+  {
+    "type": "response",
+    "hasEventData": false,
     "preview": "{\"data\":{\"articles\":{\"data\":[{\"id\":\"43e8611d-4605-41a0-a421-75fd2a9d0b5f\",\"title\":\"4 klimzalen waar je kinderen zich helemaal kunnen uitleven\",\"intro\":\"Laat je kleine klauteraars los op kleurrijke Clip &#039;n Climb-wanden of speelse boulderparcours. Deze klimzalen vind je op unieke locaties in Vlaanderen en Brussel.\",\"image\":{\"alt\":\"Klimzaal GravityFun Kraainem\",\"caption\":\"<p>© GravityFun Kraainem</p>\",\"styles\":{\"style_12_12_xl\":\"https://content.uit.be/sites/default/files/styles/12_12_xl/public/images/2026-05/Ontwerp%20zonder%20titel%20%2896%29.png?itok=oOIJue47\",\"style_12_12_lg\":\"https://content.uit.be/sites/default/files/styles/12_12_lg/public/images/2026-05/Ontwerp%20zonder%20titel%20%2896%29.png?itok=DcjiGt4I\",\"style_12_12_md\":\"https://content.uit.be/sites/default/files/styles/12_12_md/public/images/2026-05/Ontwerp%20zonder%20titel%20%2896%29.png?itok=io3k_pA8\",\"style_12_12_sm\":\"https://content.uit.be/sites/default/files/styles/12_12_sm/public/images/2026-05/Ontwerp%20zonder%20titel%20%2896%29.png?itok=EPtj6Lfx\",\"style_lazy\":\"https://content.uit.be/sites/default/files/styles/lazy/public/images/2026-05/Ontwerp%20zonder%20titel%20%2896%29.png?itok=FjLMi3p0\",\"__typename\":\"ImageStyles\"},\"__typename\":\"Image\"},\"targetGroup\":\"uitmetvlieg\",\"path\":\"/tip/klimzalen-waar-je-kinderen-zich-helemaal-kunnen-uitleven\",\"benefit\":null,\"isLiked\":null,\"campaign\":null,\"__typename\":\"Article\"}],\"__typename\":\"ArticlesResult\"}}}"
   }
 ]
