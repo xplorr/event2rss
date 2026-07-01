@@ -1,11 +1,18 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
+const MAX_PAGES = 50; // safety limit
+
 async function scrapePage(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(1000);
+
+  // ── CHANGED: wait for pagination to render before reading it ────────────
+  await page.waitForSelector('.app-pagination', { timeout: 5000 }).catch(() => {
+    console.log('  (no pagination found on this page)');
+  });
 
   return await page.evaluate(() => {
     // ── 1. Build offerId → first image map from Nuxt hydration data ─────
@@ -66,13 +73,22 @@ async function scrapePage(page, url) {
       if (title) eventsArray.push({ id: offerId, title, date, location, category, image, link });
     });
 
-    // ── 3. Get total number of pages from pagination ──────────────────────
-    const pageLinks = document.querySelectorAll('.app-pagination a[href]');
+    // ── 3. CHANGED: read totalPages more robustly ─────────────────────────
     let totalPages = 1;
-    pageLinks.forEach(a => {
-      const num = parseInt(a.textContent.trim(), 10);
-      if (!isNaN(num) && num > totalPages) totalPages = num;
-    });
+    const pagination = document.querySelector('.app-pagination');
+    if (pagination) {
+      // Log what we find for debugging
+      const allLinks = pagination.querySelectorAll('a[href]');
+      const allNumbers = [];
+      allLinks.forEach(a => {
+        const num = parseInt(a.textContent.trim(), 10);
+        if (!isNaN(num)) allNumbers.push(num);
+      });
+      console.log('Pagination numbers found:', JSON.stringify(allNumbers));
+      totalPages = allNumbers.length > 0 ? Math.max(...allNumbers) : 1;
+    } else {
+      console.log('No .app-pagination element found');
+    }
 
     return { events: eventsArray, totalPages };
   });
@@ -98,9 +114,8 @@ async function scrapeAllEvents() {
     console.log('Scraping page 1...');
     const firstResult = await scrapePage(page, baseUrl);
     let allEvents = firstResult.events;
-    // const totalPages = firstResult.totalPages;
-    const totalPages = 10;
-    console.log(`Page 1: ${firstResult.events.length} events — total pages: ${totalPages}`);
+    const totalPages = Math.min(firstResult.totalPages, MAX_PAGES); // CHANGED: apply limit
+    console.log(`Page 1: ${firstResult.events.length} events — total pages: ${totalPages} (capped at ${MAX_PAGES})`);
 
     // ── Scrape remaining pages ────────────────────────────────────────────
     for (let p = 2; p <= totalPages; p++) {
@@ -109,7 +124,7 @@ async function scrapeAllEvents() {
       const result = await scrapePage(page, pageUrl);
       console.log(`  → ${result.events.length} events`);
       allEvents = allEvents.concat(result.events);
-      await page.waitForTimeout(500); // be polite
+      await page.waitForTimeout(500);
     }
 
     console.log(`\nTotal events scraped: ${allEvents.length}`);
