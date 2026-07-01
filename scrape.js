@@ -13,6 +13,7 @@ async function scrapePage(page, url) {
 
   await page.waitForTimeout(3000);
 
+
   await page.evaluate(() => {
     window.scrollTo(0, document.body.scrollHeight);
   });
@@ -20,14 +21,16 @@ async function scrapePage(page, url) {
   await page.waitForTimeout(1000);
 
 
+
   return await page.evaluate(() => {
 
 
-    // ── Build offerId → image map from Nuxt data ─────
+    // ── Nuxt image extraction ─────────────────────
+
     const imageByOfferId = {};
 
     const nuxtEl =
-      document.querySelector('script#__NUXT_DATA__');
+      document.querySelector('#__NUXT_DATA__');
 
 
     if (nuxtEl) {
@@ -40,12 +43,12 @@ async function scrapePage(page, url) {
 
         const uuidAtIndex = {};
 
+
         nuxtData.forEach((val, i) => {
 
           if (
             typeof val === 'string' &&
-            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-              .test(val)
+            /^[0-9a-f-]{36}$/.test(val)
           ) {
             uuidAtIndex[i] = val;
           }
@@ -53,7 +56,9 @@ async function scrapePage(page, url) {
         });
 
 
+
         const imageAtIndex = {};
+
 
         nuxtData.forEach((val, i) => {
 
@@ -69,7 +74,8 @@ async function scrapePage(page, url) {
         });
 
 
-        nuxtData.forEach((val) => {
+
+        nuxtData.forEach(val => {
 
           if (
             val &&
@@ -79,47 +85,45 @@ async function scrapePage(page, url) {
             'images' in val
           ) {
 
+
             const offerId =
               uuidAtIndex[val.id];
+
 
             if (!offerId) return;
 
 
-            const imagesArray =
+
+            const imgs =
               nuxtData[val.images];
 
 
             if (
-              !Array.isArray(imagesArray) ||
-              imagesArray.length === 0
+              !Array.isArray(imgs) ||
+              !imgs.length
             ) return;
 
 
-            const firstImgObj =
-              nuxtData[imagesArray[0]];
 
+            const img =
+              nuxtData[imgs[0]];
 
-            if (
-              !firstImgObj ||
-              typeof firstImgObj !== 'object' ||
-              !('url' in firstImgObj)
-            ) return;
-
-
-            const imageUrl =
-              imageAtIndex[firstImgObj.url] ||
-              nuxtData[firstImgObj.url];
 
 
             if (
-              typeof imageUrl === 'string' &&
-              imageUrl.startsWith(
-                'https://images.uitdatabank.be/'
-              )
+              img &&
+              img.url
             ) {
 
-              imageByOfferId[offerId] =
-                imageUrl;
+              const url =
+                imageAtIndex[img.url] ||
+                nuxtData[img.url];
+
+
+              if (url) {
+                imageByOfferId[offerId] = url;
+              }
+
             }
 
           }
@@ -128,13 +132,19 @@ async function scrapePage(page, url) {
 
 
       } catch(e) {
-        console.log('Nuxt parsing failed');
+
+        console.log(
+          'Nuxt image extraction failed'
+        );
+
       }
+
     }
 
 
 
     // ── Event cards ───────────────────────────────
+
 
     const cards =
       document.querySelectorAll(
@@ -142,15 +152,19 @@ async function scrapePage(page, url) {
       );
 
 
-    const eventsArray = [];
+    const events = [];
+
 
 
     cards.forEach((card, index) => {
 
 
-      const offerId =
-        card.getAttribute('data-offer-id') ||
+      const id =
+        card.getAttribute(
+          'data-offer-id'
+        ) ||
         `event-${index}`;
+
 
 
       const title =
@@ -161,12 +175,14 @@ async function scrapePage(page, url) {
         ?.trim() || '';
 
 
+
       const date =
         card.querySelector(
           '.app-event-teaser__date'
         )
         ?.textContent
         ?.trim() || '';
+
 
 
       const location =
@@ -177,7 +193,9 @@ async function scrapePage(page, url) {
         ?.trim() || '';
 
 
-      const category =
+
+      // Event type
+      const type =
         card.querySelector(
           '.app-event-teaser__category span'
         )
@@ -185,41 +203,46 @@ async function scrapePage(page, url) {
         ?.trim() || '';
 
 
-      const link =
-        card.href || '';
+
+      // Price
+      const price =
+        card.querySelector(
+          '.app-event-teaser__price'
+        )
+        ?.textContent
+        ?.trim() || '';
 
 
-      const image =
-        imageByOfferId[offerId] || '';
 
+      events.push({
 
+        id,
+        title,
+        date,
+        location,
 
-      if (title) {
+        type,
 
-        eventsArray.push({
+        price,
 
-          id: offerId,
-          title,
-          date,
-          location,
-          category,
-          image,
-          link,
+        description: '',
+        organiser: '',
 
-          // added later from detail page
-          description: '',
-          organiser: ''
+        image:
+          imageByOfferId[id] || '',
 
-        });
+        link:
+          card.href || ''
 
-      }
+      });
+
 
     });
 
 
 
     return {
-      events: eventsArray
+      events
     };
 
   });
@@ -229,30 +252,49 @@ async function scrapePage(page, url) {
 
 
 
-async function scrapeEventDetails(detailPage, event) {
+
+async function scrapeEventDetails(page, event) {
 
 
   try {
 
 
-    await detailPage.goto(event.link, {
+    await page.goto(event.link, {
       waitUntil: 'domcontentloaded',
       timeout: 30000
     });
 
 
-    await detailPage.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
 
 
     const details =
-      await detailPage.evaluate(() => {
+      await page.evaluate(() => {
 
 
-        const description =
-          document.querySelector('#section-info')
-            ?.innerText
-            ?.trim() || '';
+
+        let description = '';
+
+        const info =
+          document.querySelector(
+            '#section-info'
+          );
+
+
+        if (info) {
+
+          description =
+            info.innerText.trim();
+
+
+          // remove heading "Info"
+          description =
+            description
+            .replace(/^Info\s*/i, '')
+            .trim();
+
+        }
 
 
 
@@ -270,25 +312,36 @@ async function scrapeEventDetails(detailPage, event) {
           organiser
         };
 
+
       });
 
 
 
     return {
+
       ...event,
-      ...details
+
+      description:
+        details.description,
+
+      organiser:
+        details.organiser
+
     };
+
 
 
   } catch(e) {
 
 
     console.log(
-      `Detail failed: ${event.link}`
+      'Detail failed:',
+      event.link
     );
 
 
     return event;
+
   }
 
 }
@@ -314,7 +367,7 @@ async function scrapeAllEvents() {
 
         headless: 'new',
 
-        args: [
+        args:[
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage'
@@ -333,27 +386,16 @@ async function scrapeAllEvents() {
 
 
 
-    await listPage.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-    );
-
-
-    await detailPage.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-    );
-
-
-
     const today =
       new Date()
-        .toISOString()
-        .split('T')[0];
+      .toISOString()
+      .split('T')[0];
 
 
     const nextWeek =
       new Date(
         Date.now() +
-        7 * 24 * 60 * 60 * 1000
+        7*24*60*60*1000
       )
       .toISOString()
       .split('T')[0];
@@ -367,20 +409,17 @@ async function scrapeAllEvents() {
 
     let allEvents = [];
 
-
     let pageNumber = 1;
 
 
 
-    // ── Scrape list pages ──────────────────────────
-
-    while (pageNumber <= MAX_PAGES) {
+    while(pageNumber <= MAX_PAGES){
 
 
       const url =
         pageNumber === 1
-          ? baseUrl
-          : `${baseUrl}&page=${pageNumber}`;
+        ? baseUrl
+        : `${baseUrl}&page=${pageNumber}`;
 
 
 
@@ -404,7 +443,9 @@ async function scrapeAllEvents() {
 
 
 
-      if (result.events.length === 0) {
+      if (
+        result.events.length === 0
+      ) {
         break;
       }
 
@@ -416,27 +457,28 @@ async function scrapeAllEvents() {
         );
 
 
-
       pageNumber++;
-
 
     }
 
 
 
     console.log(
-      `\nTotal events: ${allEvents.length}`
+      `Total events: ${allEvents.length}`
     );
 
 
 
-    // ── Add detail metadata ─────────────────────────
+    // Details
 
-    for (let i = 0; i < allEvents.length; i++) {
-
+    for(
+      let i=0;
+      i<allEvents.length;
+      i++
+    ){
 
       console.log(
-        `Details ${i + 1}/${allEvents.length}`
+        `Details ${i+1}/${allEvents.length}`
       );
 
 
@@ -446,12 +488,11 @@ async function scrapeAllEvents() {
           allEvents[i]
         );
 
-
     }
 
 
 
-    if (!fs.existsSync('data')) {
+    if(!fs.existsSync('data')){
       fs.mkdirSync('data');
     }
 
@@ -472,18 +513,11 @@ async function scrapeAllEvents() {
     );
 
 
-  } catch(error) {
-
-
-    console.error(
-      error
-    );
-
 
   } finally {
 
 
-    if (browser) {
+    if(browser){
       await browser.close();
     }
 
