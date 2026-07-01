@@ -21,64 +21,93 @@ async function scrapeEvents() {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.waitForTimeout(4000);
 
-    // Scroll to trigger infinite scroll / lazy loading
     for (let i = 0; i < 5; i++) {
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
       await page.waitForTimeout(2000);
     }
 
     const events = await page.evaluate(() => {
-      // ── 1. Extract all image URLs from Nuxt hydration data ──────────────
-      const imageMap = {};
-      const nuxtScript = document.querySelector('script#__NUXT_DATA__') 
-                      || Array.from(document.querySelectorAll('script[type="application/json"]'))
-                           .find(s => s.textContent.includes('images.uitdatabank.be'));
-      
-      if (nuxtScript) {
-        const matches = nuxtScript.textContent.matchAll(
-          /"(https:\/\/images\.uitdatabank\.be\/[^"]+\.(?:jpeg|jpg|png|webp))"/g
-        );
-        for (const m of matches) imageMap[m[1]] = m[1];
+      // ── 1. Parse Nuxt hydration data to build offerId → first image map ──
+      const imageByOfferId = {};
+      const nuxtEl = document.querySelector('script#__NUXT_DATA__');
+
+      if (nuxtEl) {
+        try {
+          const nuxtData = JSON.parse(nuxtEl.textContent);
+
+          // Find all UUID strings by index
+          const uuidAtIndex = {};
+          nuxtData.forEach((val, i) => {
+            if (typeof val === 'string' &&
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(val)) {
+              uuidAtIndex[i] = val;
+            }
+          });
+
+          // Find all uitdatabank image URLs by index
+          const imageAtIndex = {};
+          nuxtData.forEach((val, i) => {
+            if (typeof val === 'string' &&
+                val.startsWith('https://images.uitdatabank.be/')) {
+              imageAtIndex[i] = val;
+            }
+          });
+
+          // Find event objects: have both 'id' (→ UUID) and 'images' (→ array)
+          nuxtData.forEach((val) => {
+            if (val && typeof val === 'object' && !Array.isArray(val) &&
+                'id' in val && 'images' in val) {
+
+              const offerId = uuidAtIndex[val.id];
+              if (!offerId) return;
+
+              const imagesArray = nuxtData[val.images];
+              if (!Array.isArray(imagesArray) || imagesArray.length === 0) return;
+
+              // Get first image object and resolve its url field
+              const firstImgObj = nuxtData[imagesArray[0]];
+              if (!firstImgObj || typeof firstImgObj !== 'object' || !('url' in firstImgObj)) return;
+
+              const imageUrl = imageAtIndex[firstImgObj.url] || nuxtData[firstImgObj.url];
+              if (imageUrl && typeof imageUrl === 'string' &&
+                  imageUrl.startsWith('https://images.uitdatabank.be/')) {
+                imageByOfferId[offerId] = imageUrl;
+              }
+            }
+          });
+
+        } catch (e) {
+          console.error('Failed to parse Nuxt data:', e.message);
+        }
       }
 
-      // Also search inline scripts for image URLs
-      const allImageUrls = [];
-      document.querySelectorAll('script').forEach(s => {
-        const found = s.textContent.matchAll(
-          /(https:\/\/images\.uitdatabank\.be\/[a-f0-9\-]+\.(?:jpeg|jpg|png|webp))/g
-        );
-        for (const m of found) allImageUrls.push(m[1]);
-      });
+      console.log('Image map built for', Object.keys(imageByOfferId).length, 'events');
 
-      // ── 2. Scrape event cards ────────────────────────────────────────────
+      // ── 2. Scrape event cards using correct selectors ────────────────────
       const cards = document.querySelectorAll('a[data-testid="event-teaser-link"]');
       const eventsArray = [];
 
       cards.forEach((card, index) => {
         const offerId = card.getAttribute('data-offer-id') || `event-${index}`;
-        const href = card.href || '';
-
-        const title = card.querySelector('.app-event-teaser__title')?.textContent?.trim() || '';
-        const date  = card.querySelector('.app-event-teaser__date')?.textContent?.trim() || '';
+        const title    = card.querySelector('.app-event-teaser__title')?.textContent?.trim() || '';
+        const date     = card.querySelector('.app-event-teaser__date')?.textContent?.trim() || '';
         const location = card.querySelector('.app-event-teaser__address')?.textContent?.trim() || '';
         const category = card.querySelector('.app-event-teaser__category')?.textContent?.trim() || '';
-
-        // Try to find matching image — allImageUrls[index] is a reasonable match
-        // since images appear in the same order as events in the hydration data
-        const image = allImageUrls[index] || '';
+        const link     = card.href || '';
+        const image    = imageByOfferId[offerId] || '';
 
         if (title) {
-          eventsArray.push({ id: offerId, title, date, location, category, image, link: href });
+          eventsArray.push({ id: offerId, title, date, location, category, image, link });
         }
       });
 
-      return { events: eventsArray, totalImages: allImageUrls.length };
+      return eventsArray;
     });
 
-    console.log(`Found ${events.events.length} events, ${events.totalImages} images in hydration data`);
+    console.log(`Scraped ${events.length} events`);
 
     if (!fs.existsSync('data')) fs.mkdirSync('data');
-    fs.writeFileSync('data/events.json', JSON.stringify(events.events, null, 2));
+    fs.writeFileSync('data/events.json', JSON.stringify(events, null, 2));
     console.log('✓ Saved to data/events.json');
 
   } catch (error) {
