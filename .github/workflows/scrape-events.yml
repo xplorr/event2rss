@@ -7,7 +7,7 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v3
 
@@ -27,11 +27,11 @@ jobs:
           npm config set fetch-retry-mintimeout 5000
           npm config set fetch-retry-maxtimeout 20000
           npm install puppeteer xml
-        timeout-minutes: 5
+        timeout-minutes: 10
 
       - name: Scrape events
         run: node scrape.js
-        timeout-minutes: 3
+        timeout-minutes: 10
 
       - name: Generate RSS
         run: node json-to-rss.js
