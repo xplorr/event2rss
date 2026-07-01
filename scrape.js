@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-const MAX_PAGES = 50;
+const MAX_PAGES = 5;
 
 
 async function scrapePage(page, url) {
