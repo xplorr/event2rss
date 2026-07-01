@@ -30,7 +30,7 @@ jobs:
         timeout-minutes: 5
 
       - name: Scrape (debug mode)
-        run: node scrape-debug.js
+        run: node scrape.js
         timeout-minutes: 3
 
       - name: Commit and push debug output
