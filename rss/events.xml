@@ -7,168 +7,218 @@
     <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene</link>
     <description>Events in Stekene and surrounding areas</description>
     <language>nl</language>
-    <lastBuildDate>Tue, 30 Jun 2026 15:17:37 GMT</lastBuildDate>
+    <lastBuildDate>Wed, 01 Jul 2026 09:19:20 GMT</lastBuildDate>
     <generator>Scraper v1.0</generator>
     
     <item>
-      <title>Expo Willem Persoon</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-0-event-1782832657699-0</guid>
-      <description><![CDATA[
-        
-        <p><strong>Date:</strong> Tot di 30 jun</p>
-        <p><strong>Location:</strong> Cultuurhuis - bibliotheek - Stekene</p>
-        <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
-        <p></p>
-      ]]></description>
-      <pubDate>Sat, 30 Jun 2001 00:00:00 GMT</pubDate>
-      <category>Events</category>
-      
-    </item>
-    <item>
-      <title>Zoektocht</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-1-event-1782832657699-1</guid>
-      <description><![CDATA[
-        
-        <p><strong>Date:</strong> Wo 1 apr - di 30 jun</p>
-        <p><strong>Location:</strong> Christel - Waasmunster</p>
-        <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
-        <p></p>
-      ]]></description>
-      <pubDate>Invalid Date</pubDate>
-      <category>Events</category>
-      
-    </item>
-    <item>
-      <title>wandelen doorheen Sint-Pauwels</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-2-event-1782832657699-2</guid>
-      <description><![CDATA[
-        
-        <p><strong>Date:</strong> Wo 1 apr - Di 30 jun</p>
-        <p><strong>Location:</strong> kerkplein Sint-Pauwels - Sint-Pauwels (Sint-Gillis-Waas)</p>
-        <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
-        <p></p>
-      ]]></description>
-      <pubDate>Invalid Date</pubDate>
-      <category>Events</category>
-      
-    </item>
-    <item>
-      <title>Inschrijvingen Speelplein juli 2026</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-3-event-1782832657699-3</guid>
-      <description><![CDATA[
-        
-        <p><strong>Date:</strong> Wo 1 jul - vr 31 jul</p>
-        <p><strong>Location:</strong> GC De Route - Sint-Gillis-Waas</p>
-        <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
-        <p></p>
-      ]]></description>
-      <pubDate>Invalid Date</pubDate>
-      <category>Events</category>
-      
-    </item>
-    <item>
       <title>In- en uitloopactiviteit | CLUB KARTON: voetbal</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-4-event-1782832657699-4</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/in-en-uitloopactiviteit-club-karton-voetbal/b4fbbb68-35ad-4006-a7de-113f36d1a481?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-0-b4fbbb68-35ad-4006-a7de-113f36d1a481</guid>
       <description><![CDATA[
-        
-        <p><strong>Date:</strong> Morgen</p>
+        <p><img src="https://images.uitdatabank.be/45488d69-5105-49ba-9c7b-254952ee19e4.jpeg" style="max-width: 300px; height: auto;" alt="In- en uitloopactiviteit | CLUB KARTON: voetbal" /></p>
+        <p><strong>Date:</strong> Vandaag</p>
         <p><strong>Location:</strong> Bibliotheek Lokeren - Lokeren</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/45488d69-5105-49ba-9c7b-254952ee19e4.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/45488d69-5105-49ba-9c7b-254952ee19e4.jpeg" />
     </item>
     <item>
       <title>Gezondheidswandeling</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-5-event-1782832657699-5</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/gezondheidswandeling/9216c00c-6030-4a53-bf4c-950192ebef95?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-1-9216c00c-6030-4a53-bf4c-950192ebef95</guid>
       <description><![CDATA[
-        
-        <p><strong>Date:</strong> Deze donderdag</p>
+        <p><img src="https://images.uitdatabank.be/7e2052fd-0b44-42d2-a678-e4ef80f118a6.png" style="max-width: 300px; height: auto;" alt="Gezondheidswandeling" /></p>
+        <p><strong>Date:</strong> Morgen</p>
         <p><strong>Location:</strong> Apotheek Spoele - Lokeren</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/7e2052fd-0b44-42d2-a678-e4ef80f118a6.png" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/7e2052fd-0b44-42d2-a678-e4ef80f118a6.png" />
     </item>
     <item>
       <title>Zomerbar - Buurtwerking Wachtebeke</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-6-event-1782832657699-6</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/zomerbar-buurtwerking-wachtebeke/9b29a6a1-cd38-4c22-b052-b6300513679d?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-2-9b29a6a1-cd38-4c22-b052-b6300513679d</guid>
       <description><![CDATA[
-        
+        <p><img src="https://images.uitdatabank.be/2e41e99b-3bc1-4421-b09b-4ab11386deb0.jpeg" style="max-width: 300px; height: auto;" alt="Zomerbar - Buurtwerking Wachtebeke" /></p>
         <p><strong>Date:</strong> Deze vrijdag</p>
         <p><strong>Location:</strong> WZC De Mey - Wachtebeke (Lochristi)</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/2e41e99b-3bc1-4421-b09b-4ab11386deb0.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/2e41e99b-3bc1-4421-b09b-4ab11386deb0.jpeg" />
     </item>
     <item>
       <title>Schemersound 2: Sam De Nef</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-7-event-1782832657699-7</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/schemersound-2-sam-de-nef/e11a83e0-e7ea-40f6-b702-5cbe1ec9cc93?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-3-e11a83e0-e7ea-40f6-b702-5cbe1ec9cc93</guid>
       <description><![CDATA[
-        
+        <p><img src="https://images.uitdatabank.be/518f4b41-fa13-495a-9a71-7beb2a5e6722.jpeg" style="max-width: 300px; height: auto;" alt="Schemersound 2: Sam De Nef" /></p>
         <p><strong>Date:</strong> Deze vrijdag</p>
         <p><strong>Location:</strong> Park Ter Beuken - Lokeren</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/518f4b41-fa13-495a-9a71-7beb2a5e6722.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/518f4b41-fa13-495a-9a71-7beb2a5e6722.jpeg" />
     </item>
     <item>
       <title>Schemersound 2: Sophia Ammann</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-8-event-1782832657699-8</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/schemersound-2-sophia-ammann/8c38a1bd-da01-4409-8b31-5ed0fa1b6a5d?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-4-8c38a1bd-da01-4409-8b31-5ed0fa1b6a5d</guid>
       <description><![CDATA[
-        
+        <p><img src="https://images.uitdatabank.be/55172980-68b3-40b4-9908-d092ed37ab22.png" style="max-width: 300px; height: auto;" alt="Schemersound 2: Sophia Ammann" /></p>
         <p><strong>Date:</strong> Deze vrijdag</p>
         <p><strong>Location:</strong> Park Ter Beuken - Lokeren</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/55172980-68b3-40b4-9908-d092ed37ab22.png" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/55172980-68b3-40b4-9908-d092ed37ab22.png" />
     </item>
     <item>
       <title>Platenmarkt</title>
-      <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=2026-06-30&amp;dateTo=2026-07-07&amp;distance=15&amp;price=free</link>
-      <guid isPermaLink="false">event-9-event-1782832657699-9</guid>
+      <link>https://www.uitinvlaanderen.be/agenda/e/platenmarkt/1fae5e30-7e2d-4fab-b90a-c3b362437b58?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-5-1fae5e30-7e2d-4fab-b90a-c3b362437b58</guid>
       <description><![CDATA[
-        
+        <p><img src="https://images.uitdatabank.be/985122ed-2858-47f4-b760-d547db58a18a.jpeg" style="max-width: 300px; height: auto;" alt="Platenmarkt" /></p>
         <p><strong>Date:</strong> Deze vrijdag</p>
         <p><strong>Location:</strong> MOC Perron - Hamme</p>
         <p><strong>Organizer:</strong> </p>
-        <p><strong>Price:</strong> Free</p>
+        <p><strong>Price:</strong> </p>
         <p></p>
       ]]></description>
       <pubDate>Invalid Date</pubDate>
       <category>Events</category>
       
+      <media:content 
+        url="https://images.uitdatabank.be/985122ed-2858-47f4-b760-d547db58a18a.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/985122ed-2858-47f4-b760-d547db58a18a.jpeg" />
+    </item>
+    <item>
+      <title>Vlaanderen Feest!</title>
+      <link>https://www.uitinvlaanderen.be/agenda/e/vlaanderen-feest/88c66ba6-b64f-4c25-9e17-2117e8427bb3?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-6-88c66ba6-b64f-4c25-9e17-2117e8427bb3</guid>
+      <description><![CDATA[
+        <p><img src="https://images.uitdatabank.be/ee99e034-4d3e-4f6a-a302-8cb5a1a0a180.jpeg" style="max-width: 300px; height: auto;" alt="Vlaanderen Feest!" /></p>
+        <p><strong>Date:</strong> Vr 3 jul - Za 4 jul</p>
+        <p><strong>Location:</strong> Leo Vercruyssenpark - Meerdonk (Sint-Gillis-Waas)</p>
+        <p><strong>Organizer:</strong> </p>
+        <p><strong>Price:</strong> </p>
+        <p></p>
+      ]]></description>
+      <pubDate>Invalid Date</pubDate>
+      <category>Events</category>
+      
+      <media:content 
+        url="https://images.uitdatabank.be/ee99e034-4d3e-4f6a-a302-8cb5a1a0a180.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/ee99e034-4d3e-4f6a-a302-8cb5a1a0a180.jpeg" />
+    </item>
+    <item>
+      <title>11 juli viering Nieuwkerken-Waas</title>
+      <link>https://www.uitinvlaanderen.be/agenda/e/11-juli-viering-nieuwkerken-waas/6cc415a7-d31a-4f73-8598-405b42ead5a8?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-7-6cc415a7-d31a-4f73-8598-405b42ead5a8</guid>
+      <description><![CDATA[
+        <p><img src="https://images.uitdatabank.be/21c65f66-9585-439d-8488-e5679150af24.jpeg" style="max-width: 300px; height: auto;" alt="11 juli viering Nieuwkerken-Waas" /></p>
+        <p><strong>Date:</strong> Vr 3 jul - Za 4 jul</p>
+        <p><strong>Location:</strong> Ten Bos Nieuwkerken-Waas - Nieuwkerken-Waas (Sint-Niklaas)</p>
+        <p><strong>Organizer:</strong> </p>
+        <p><strong>Price:</strong> </p>
+        <p></p>
+      ]]></description>
+      <pubDate>Invalid Date</pubDate>
+      <category>Events</category>
+      
+      <media:content 
+        url="https://images.uitdatabank.be/21c65f66-9585-439d-8488-e5679150af24.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/21c65f66-9585-439d-8488-e5679150af24.jpeg" />
+    </item>
+    <item>
+      <title>Rommelmarkt Zwaluwlaan</title>
+      <link>https://www.uitinvlaanderen.be/agenda/e/rommelmarkt-zwaluwlaan/d37968ed-42cd-4f39-b24f-cfb627c75233?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-8-d37968ed-42cd-4f39-b24f-cfb627c75233</guid>
+      <description><![CDATA[
+        <p><img src="https://images.uitdatabank.be/56f32ed8-0c19-428d-bf73-0c3bbed2462e.jpeg" style="max-width: 300px; height: auto;" alt="Rommelmarkt Zwaluwlaan" /></p>
+        <p><strong>Date:</strong> Deze zaterdag</p>
+        <p><strong>Location:</strong> Zwaluwlaan - Wachtebeke (Lochristi)</p>
+        <p><strong>Organizer:</strong> </p>
+        <p><strong>Price:</strong> </p>
+        <p></p>
+      ]]></description>
+      <pubDate>Invalid Date</pubDate>
+      <category>Events</category>
+      
+      <media:content 
+        url="https://images.uitdatabank.be/56f32ed8-0c19-428d-bf73-0c3bbed2462e.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/56f32ed8-0c19-428d-bf73-0c3bbed2462e.jpeg" />
+    </item>
+    <item>
+      <title>Zomerbarconcert Danny cap &amp; Wim Heirbaut</title>
+      <link>https://www.uitinvlaanderen.be/agenda/e/zomerbarconcert-danny-cap-wim-heirbaut/8a9d0e8d-5a0c-42af-a4ac-cea38a78cba0?dateFrom=2026-07-01&amp;dateTo=2026-07-08&amp;place=9190-stekene&amp;distance=15&amp;price=free</link>
+      <guid isPermaLink="false">event-9-8a9d0e8d-5a0c-42af-a4ac-cea38a78cba0</guid>
+      <description><![CDATA[
+        <p><img src="https://images.uitdatabank.be/c9973f29-40bc-49ed-b224-c98c36448e1b.jpeg" style="max-width: 300px; height: auto;" alt="Zomerbarconcert Danny cap &amp; Wim Heirbaut" /></p>
+        <p><strong>Date:</strong> Deze zaterdag</p>
+        <p><strong>Location:</strong> Holdamhoeve - Sint-Gillis-Waas</p>
+        <p><strong>Organizer:</strong> </p>
+        <p><strong>Price:</strong> </p>
+        <p></p>
+      ]]></description>
+      <pubDate>Invalid Date</pubDate>
+      <category>Events</category>
+      
+      <media:content 
+        url="https://images.uitdatabank.be/c9973f29-40bc-49ed-b224-c98c36448e1b.jpeg" 
+        medium="image" 
+        type="image/jpeg" />
+      <image url="https://images.uitdatabank.be/c9973f29-40bc-49ed-b224-c98c36448e1b.jpeg" />
     </item>
   </channel>
 </rss>
