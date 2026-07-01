@@ -98,7 +98,8 @@ async function scrapeAllEvents() {
     console.log('Scraping page 1...');
     const firstResult = await scrapePage(page, baseUrl);
     let allEvents = firstResult.events;
-    const totalPages = firstResult.totalPages;
+    // const totalPages = firstResult.totalPages;
+    const totalPages = 10;
     console.log(`Page 1: ${firstResult.events.length} events — total pages: ${totalPages}`);
 
     // ── Scrape remaining pages ────────────────────────────────────────────
