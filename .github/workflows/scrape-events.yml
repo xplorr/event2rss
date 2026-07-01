@@ -1,8 +1,8 @@
 name: Scrape Events to RSS
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
-  workflow_dispatch:     # Manual trigger option
+    - cron: '0 2 * * *'
+  workflow_dispatch:
 
 jobs:
   scrape:
@@ -16,7 +16,7 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install Chromium (system package, fast & reliable)
+      - name: Install Chromium
         run: sudo apt-get update && sudo apt-get install -y chromium-browser
 
       - name: Install dependencies
@@ -29,14 +29,17 @@ jobs:
           npm install puppeteer xml
         timeout-minutes: 5
 
-      - name: Scrape (debug mode)
+      - name: Scrape events
         run: node scrape.js
         timeout-minutes: 3
 
-      - name: Commit and push debug output
+      - name: Generate RSS
+        run: node json-to-rss.js
+
+      - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add debug-info.json || true
-          git commit -m "Update debug info $(date)" || true
+          git add data/events.json rss/events.xml || true
+          git diff --staged --quiet || git commit -m "Update events RSS $(date)"
           git push
