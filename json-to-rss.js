@@ -48,10 +48,8 @@ async function generateRSS() {
       <guid isPermaLink="false">event-${index}-${escapeXml(event.id)}</guid>
       <description><![CDATA[
         ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px; height: auto;" alt="${escapeXml(event.title)}" /></p>` : ''}
-        <p><strong>Date:</strong> ${escapeXml(event.date)}</p>
-        <p><strong>Location:</strong> ${escapeXml(event.location)}</p>
-        <p><strong>Organizer:</strong> ${escapeXml(event.organizer)}</p>
-        <p><strong>Price:</strong> ${escapeXml(event.price)}</p>
+        <p>${escapeXml(event.date)}</p>
+        <p>${escapeXml(event.location)}</p>
         <p>${escapeXml(event.description)}</p>
       ]]></description>
       <pubDate>${formatDate(event.date)}</pubDate>
