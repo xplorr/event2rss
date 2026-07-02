@@ -47,10 +47,8 @@ async function generateRSS() {
       <link>${escapeXml(event.link)}</link>
       <guid isPermaLink="false">event-${index}-${escapeXml(event.id)}</guid>
       <description><![CDATA[
-        ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px; height: auto;" alt="${escapeXml(event.title)}" /></p>` : ''}
-        <p>${escapeXml(event.date)}</p>
-        <p>${escapeXml(event.location)}</p>
-        <p>${escapeXml(event.description)}</p>
+        ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px; height: 300px;" alt="${escapeXml(event.title)}" /></p>` : ''}
+        <p>${escapeXml(event.date)} | ${escapeXml(event.location)} | ${escapeXml(event.description)}</p> 
       ]]></description>
       <pubDate>${formatDate(event.date)}</pubDate>
       <category>Events</category>
@@ -64,7 +62,7 @@ async function generateRSS() {
   xmlns:content="http://purl.org/rss/1.0/modules/content/"
   xmlns:media="http://search.yahoo.com/mrss/">
   <channel>
-    <title>Uit in Vlaanderen - Stekene Events</title>
+    <title>Uit in Vlaanderen</title>
     <link>https://www.uitinvlaanderen.be/agenda/alle/9190-stekene</link>
     <description>Events in Stekene and surrounding areas</description>
     <language>nl</language>
