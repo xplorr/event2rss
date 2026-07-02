@@ -1,4 +1,5 @@
 name: Scrape Events to RSS
+
 on:
   schedule:
     - cron: '0 2 * * *'
@@ -7,31 +8,34 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
+
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
+          cache: 'npm'
 
-      - name: Install Chromium
-        run: sudo apt-get update && sudo apt-get install -y chromium-browser
+      # Cache Puppeteer browser downloads (BIG speed boost)
+      - name: Cache Puppeteer browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/puppeteer
+          key: ${{ runner.os }}-puppeteer
 
       - name: Install dependencies
-        env:
-          PUPPETEER_SKIP_DOWNLOAD: 'true'
         run: |
           npm config set fetch-retries 3
           npm config set fetch-retry-mintimeout 5000
           npm config set fetch-retry-maxtimeout 20000
           npm install puppeteer xml
-        timeout-minutes: 10
 
       - name: Scrape events
         run: node scrape.js
-        timeout-minutes: 10
+        timeout-minutes: 30
 
       - name: Generate RSS
         run: node json-to-rss.js
