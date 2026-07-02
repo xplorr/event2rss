@@ -13,33 +13,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 24 (fixes deprecation warning)
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
-      # Cache Puppeteer browser downloads (BIG speed boost)
+      # REQUIRED: enables fast npm caching (fixes your error)
+      - name: Ensure package-lock exists
+        run: |
+          if [ ! -f package-lock.json ]; then
+            npm install --package-lock-only
+          fi
+
+      # Cache Puppeteer browser downloads (big speed boost)
       - name: Cache Puppeteer browsers
         uses: actions/cache@v4
         with:
           path: ~/.cache/puppeteer
           key: ${{ runner.os }}-puppeteer
 
+      # Install dependencies (fast + reproducible)
       - name: Install dependencies
-        run: |
-          npm config set fetch-retries 3
-          npm config set fetch-retry-mintimeout 5000
-          npm config set fetch-retry-maxtimeout 20000
-          npm install puppeteer xml
+        run: npm ci || npm install
 
+      # Scrape
       - name: Scrape events
         run: node scrape.js
         timeout-minutes: 30
 
+      # Generate RSS
       - name: Generate RSS
         run: node json-to-rss.js
 
+      # Commit results
       - name: Commit and push
         run: |
           git config --local user.email "action@github.com"
