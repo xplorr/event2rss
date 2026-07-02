@@ -109,7 +109,7 @@ async function scrapeAllEvents() {
 
   try {
     browser = await puppeteer.launch({
-      executablePath: '/usr/bin/chromium-browser',
+      executablePath: '/usr/bin/google-chrome',
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     });
