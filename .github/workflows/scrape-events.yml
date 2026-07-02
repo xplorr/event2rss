@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm' # Optional: Caches your npm modules for even faster runs
+          # cache: 'npm' # Optional: Caches your npm modules for even faster runs
 
       # NOTE: The "Install Chromium" step has been completely removed.
       # Google Chrome is already pre-installed at /usr/bin/google-chrome
