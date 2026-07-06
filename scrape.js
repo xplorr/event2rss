@@ -212,8 +212,8 @@ async function scrapeAllEvents() {
     allEvents = allEvents.filter(event => {
       const { start } = parseDutchDateField(event.date, targetDate);
       if (!start) {
-        console.log(`  Could not parse date "${event.date}" for "${event.title}", keeping it by default`);
-        return true;
+        console.log(`  Could not parse date "${event.date}" for "${event.title}", rejecting it by default`);
+        return false;
       }
       return isSameDay(start, targetDate);
     });
