@@ -3,6 +3,66 @@ const fs = require('fs');
 
 const MAX_PAGES = 50;
 
+const DUTCH_MONTHS = {
+  jan: 0, feb: 1, mrt: 2, apr: 3, mei: 4, jun: 5,
+  jul: 6, aug: 7, sep: 8, okt: 9, nov: 10, dec: 11
+};
+
+// Parses a single Dutch date chunk like "Di 14 jul" into a Date object.
+// `reference` is used to resolve the (implicit) year, handling year-end wraparound.
+function parseSingleDutchDate(chunk, reference) {
+  if (!chunk) return null;
+
+  const match = chunk.trim().match(/^[a-z]{2}\.?\s+(\d{1,2})\s+([a-z]{3})\.?$/i);
+  if (!match) return null;
+
+  const day = parseInt(match[1], 10);
+  const month = DUTCH_MONTHS[match[2].toLowerCase()];
+  if (month === undefined || Number.isNaN(day)) return null;
+
+  let year = reference.getFullYear();
+  let candidate = new Date(year, month, day);
+
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const diffDays = (candidate - reference) / MS_PER_DAY;
+
+  // If the naive candidate lands too far in the past/future, it's actually
+  // referring to next/previous year (e.g. reference=Dec, chunk=Jan).
+  if (diffDays < -180) candidate = new Date(year + 1, month, day);
+  else if (diffDays > 180) candidate = new Date(year - 1, month, day);
+
+  return candidate;
+}
+
+// Parses the full Date field text, which is either a single date
+// ("Di 14 jul") or a span ("Ma 25 jun - do 23 jul").
+// Returns { start: Date|null, end: Date|null }.
+function parseDutchDateField(dateText, reference) {
+  if (!dateText) return { start: null, end: null };
+
+  const parts = dateText.split('-').map(p => p.trim()).filter(Boolean);
+
+  if (parts.length === 1) {
+    const start = parseSingleDutchDate(parts[0], reference);
+    return { start, end: start };
+  }
+
+  if (parts.length === 2) {
+    const start = parseSingleDutchDate(parts[0], reference);
+    const end = parseSingleDutchDate(parts[1], reference);
+    return { start, end };
+  }
+
+  return { start: null, end: null };
+}
+
+function isSameDay(a, b) {
+  if (!a || !b) return false;
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+}
+
 async function scrapePage(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
@@ -117,7 +177,7 @@ async function scrapeAllEvents() {
     const listPage = await browser.newPage();
     const detailPage = await browser.newPage();
 
-    const today = new Date().toISOString().split('T')[0];
+    // const today = new Date().toISOString().split('T')[0];
     const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     // const baseUrl = `https://www.uitinvlaanderen.be/agenda/alle/9190-stekene?dateFrom=${today}&dateTo=${nextWeek}&distance=15&price=free`;
@@ -141,6 +201,24 @@ async function scrapeAllEvents() {
     }
 
     console.log(`Total events: ${allEvents.length}`);
+
+    // Keep only events whose date exactly matches the selected date (today + 7 days),
+    // or whose date SPAN starts exactly on that date. A span where the selected date
+    // merely falls in between (but isn't the start) is rejected.
+    const targetDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const beforeFilterCount = allEvents.length;
+    allEvents = allEvents.filter(event => {
+      const { start } = parseDutchDateField(event.date, targetDate);
+      if (!start) {
+        console.log(`  Could not parse date "${event.date}" for "${event.title}", keeping it by default`);
+        return true;
+      }
+      return isSameDay(start, targetDate);
+    });
+
+    console.log(`Filtered by date: ${allEvents.length}/${beforeFilterCount} events kept (target: ${targetDate.toDateString()})`);
 
     for (let i = 0; i < allEvents.length; i++) {
       console.log(`Details ${i + 1}/${allEvents.length}`);
