@@ -210,12 +210,21 @@ async function scrapeAllEvents() {
 
     const beforeFilterCount = allEvents.length;
     allEvents = allEvents.filter(event => {
-      const { start } = parseDutchDateField(event.date, targetDate);
+      const { start, end } = parseDutchDateField(event.date, targetDate);
       if (!start) {
         console.log(`  Could not parse date "${event.date}" for "${event.title}", rejecting it by default`);
         return false;
       }
-      return isSameDay(start, targetDate);
+      if (!isSameDay(start, targetDate)) return false;
+
+      // Store the resolved, unambiguous date so downstream consumers (json2rss)
+      // never have to re-parse Dutch display text like "Di 14 jul" — that's what
+      // was silently producing "14 Jul 2001" pubDates (V8's Date parser defaults
+      // to year 2001 when it falls back on a year-less, non-ISO string).
+      event.startDateISO = start.toISOString();
+      event.endDateISO = end ? end.toISOString() : start.toISOString();
+
+      return true;
     });
 
     console.log(`Filtered by date: ${allEvents.length}/${beforeFilterCount} events kept (target: ${targetDate.toDateString()})`);
