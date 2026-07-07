@@ -1,8 +1,9 @@
 const fs = require('fs');
+const path = require('path');
 
-function escapeXml(str) {
-  if (!str) return '';
-  return str.replace(/[<>&'"]/g, (c) => ({
+function escapeXml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[<>&'"]/g, (c) => ({
     '<': '&lt;',
     '>': '&gt;',
     '&': '&amp;',
@@ -11,12 +12,27 @@ function escapeXml(str) {
   }[c]));
 }
 
+// Expects an ISO date string (e.g. event.startDateISO, produced by the scraper,
+// which already resolved the correct year from the Dutch display text).
+// Falling back to "now" only happens if the value is genuinely missing/invalid,
+// and isNaN(date) correctly catches Invalid Date instead of letting a bad-but-
+// non-throwing date slip through silently.
 function formatDate(dateStr) {
-  try {
-    const date = new Date(dateStr);
-    return date.toUTCString();
-  } catch {
-    return new Date().toUTCString();
+  const date = new Date(dateStr);
+  return isNaN(date) ? new Date().toUTCString() : date.toUTCString();
+}
+
+// Best-effort mime type from the image URL's file extension, since RSS/media
+// readers can be picky about a declared type that doesn't match the actual file.
+function guessImageType(url) {
+  const ext = path.extname(new URL(url).pathname).toLowerCase();
+  switch (ext) {
+    case '.png': return 'image/png';
+    case '.webp': return 'image/webp';
+    case '.gif': return 'image/gif';
+    case '.jpg':
+    case '.jpeg':
+    default: return 'image/jpeg';
   }
 }
 
@@ -29,28 +45,37 @@ async function generateRSS() {
 
     // Build RSS items
     let itemsXml = '';
-    eventsData.forEach((event, index) => {
+    eventsData.forEach((event) => {
       // Create image tag if image exists
       let imageXml = '';
       if (event.image && event.image.trim() !== '') {
+        let imageType = 'image/jpeg';
+        try {
+          imageType = guessImageType(event.image);
+        } catch {
+          // malformed URL, keep default
+        }
+
         imageXml = `
       <media:content 
         url="${escapeXml(event.image)}" 
         medium="image" 
-        type="image/jpeg" />
-      <image url="${escapeXml(event.image)}" />`;
+        type="${imageType}" />`;
       }
-      
+
+      // guid is based on the event's own id only (no array index), so it stays
+      // stable across regenerations even if ordering, insertions, or removals
+      // change which index an event happens to land on.
       itemsXml += `
     <item>
       <title>${escapeXml(event.title)}</title>
       <link>${escapeXml(event.link)}</link>
-      <guid isPermaLink="false">event-${index}-${escapeXml(event.id)}</guid>
+      <guid isPermaLink="false">${escapeXml(event.id)}</guid>
       <description><![CDATA[
         ${event.image ? `<p><img src="${escapeXml(event.image)}" style="max-width: 300px; height: auto;" alt="${escapeXml(event.title)}" /></p>` : ''}
         <p>${escapeXml(event.date)} | ${escapeXml(event.location)} | <br>${escapeXml(event.description)}</p> 
       ]]></description>
-      <pubDate>${formatDate(event.date)}</pubDate>
+      <pubDate>${formatDate(event.startDateISO || event.date)}</pubDate>
       <category>Events</category>
       ${imageXml}
     </item>`;
@@ -76,11 +101,9 @@ async function generateRSS() {
     if (!fs.existsSync('rss')) {
       fs.mkdirSync('rss');
     }
-
     fs.writeFileSync('rss/events.xml', rss);
     console.log('RSS feed generated successfully');
     console.log(`Feed contains ${eventsData.length} events`);
-
   } catch (error) {
     console.error('RSS generation error:', error.message);
     process.exit(1);
