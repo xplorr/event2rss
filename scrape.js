@@ -47,7 +47,6 @@ function isSameDay(a, b) {
 }
 
 async function scrapePage(page, url) {
-  // Forward browser console to Node stdout so debug logs appear in Actions
   page.removeAllListeners('console');
   page.on('console', msg => console.log('[browser]', msg.text()));
 
@@ -57,19 +56,17 @@ async function scrapePage(page, url) {
   await page.waitForTimeout(1000);
 
   await Promise.race([
+    page.waitForSelector('a[data-testid="event-search-card-link"]', { timeout: 6000 }).catch(() => {}),
     page.waitForSelector('a[data-testid="event-teaser-link"]', { timeout: 6000 }).catch(() => {}),
     page.waitForSelector('a[data-offer-id]', { timeout: 6000 }).catch(() => {}),
   ]);
-  await page.waitForSelector('.app-pagination', { timeout: 5000 }).catch(() => {});
 
-  // Dump raw HTML for inspection when 0 events found
-  const html = await page.content();
   if (!fs.existsSync('data')) fs.mkdirSync('data');
+  const html = await page.content();
   fs.writeFileSync('data/debug-page.html', html);
-  console.log('Page HTML saved to data/debug-page.html (' + html.length + ' bytes)');
 
   return await page.evaluate(() => {
-    // ── Image map from Nuxt hydration data ───────────────────────────────
+    // ── Image map ─────────────────────────────────────────────────────────
     const imageByOfferId = {};
     const nuxtEl = document.querySelector('#__NUXT_DATA__');
     if (nuxtEl) {
@@ -95,16 +92,13 @@ async function scrapePage(page, url) {
           }
         });
       } catch (e) { console.log('Nuxt image extraction failed:', e.message); }
-    } else {
-      console.log('No #__NUXT_DATA__ element found');
     }
 
-    // ── Try multiple card selectors ───────────────────────────────────────
+    // ── Card selectors — concert page first, events page second ───────────
     const SELECTORS = [
+      'a[data-testid="event-search-card-link"]',
       'a[data-testid="event-teaser-link"]',
       'a[data-offer-id]',
-      'a[data-testid="event-card-link"]',
-      'article.app-event-teaser',
     ];
 
     let cards = [];
@@ -114,32 +108,26 @@ async function scrapePage(page, url) {
       if (found.length > 0) { cards = [...found]; usedSelector = sel; break; }
     }
 
-    // ── Debug when 0 cards found ──────────────────────────────────────────
     if (cards.length === 0) {
-      console.log('DEBUG page title:', document.title);
-      console.log('DEBUG body text preview:', document.body?.innerText?.substring(0, 500));
       const testIds = [...document.querySelectorAll('[data-testid]')]
         .map(el => el.getAttribute('data-testid'))
         .filter((v, i, a) => a.indexOf(v) === i);
+      console.log('DEBUG 0 cards — title:', document.title);
       console.log('DEBUG data-testid values:', JSON.stringify(testIds));
       console.log('DEBUG data-offer-id count:', document.querySelectorAll('[data-offer-id]').length);
-      console.log('DEBUG #__NUXT_DATA__ present:', !!document.querySelector('#__NUXT_DATA__'));
     } else {
-      console.log('Selector used:', usedSelector, '→', cards.length, 'cards');
+      console.log('Selector:', usedSelector, '→', cards.length, 'cards');
     }
 
     // ── Scrape cards ──────────────────────────────────────────────────────
     const events = [];
     cards.forEach((card, index) => {
       const id       = card.getAttribute('data-offer-id') || `event-${index}`;
-      const title    = card.querySelector('.app-event-teaser__title')?.textContent?.trim()
-                    || card.querySelector('h2, h3')?.textContent?.trim() || '';
-      const date     = card.querySelector('.app-event-teaser__date')?.textContent?.trim()
-                    || card.querySelector('[class*="date"], time')?.textContent?.trim() || '';
-      const location = card.querySelector('.app-event-teaser__address')?.textContent?.trim()
-                    || card.querySelector('[class*="address"], [class*="location"]')?.textContent?.trim() || '';
-      const type     = card.querySelector('.app-event-teaser__category span')?.textContent?.trim() || '';
-      const price    = card.querySelector('.app-event-teaser__price')?.textContent?.trim() || '';
+      const title    = card.querySelector('.app-event-teaser__title, [class*="title"] h2, [class*="title"] h3, h2, h3')?.textContent?.trim() || '';
+      const date     = card.querySelector('.app-event-teaser__date, [class*="date"], time, [class*="period"]')?.textContent?.trim() || '';
+      const location = card.querySelector('.app-event-teaser__address, [class*="address"], [class*="location"]')?.textContent?.trim() || '';
+      const type     = card.querySelector('.app-event-teaser__category span, [class*="category"] span, [class*="type"]')?.textContent?.trim() || '';
+      const price    = card.querySelector('.app-event-teaser__price, [class*="price"]')?.textContent?.trim() || '';
       events.push({
         id, title, date, location, type, price,
         description: '', organiser: '',
@@ -148,9 +136,18 @@ async function scrapePage(page, url) {
       });
     });
 
-    // ── Pagination ────────────────────────────────────────────────────────
+    // ── Pagination — try multiple selectors ───────────────────────────────
     let totalPages = 1;
-    const pagination = document.querySelector('.app-pagination');
+    const paginationSelectors = [
+      '.app-pagination',
+      '[class*="pagination"]',
+      'nav[aria-label*="paginat"]',
+    ];
+    let pagination = null;
+    for (const sel of paginationSelectors) {
+      pagination = document.querySelector(sel);
+      if (pagination) { console.log('Pagination found with:', sel); break; }
+    }
     if (pagination) {
       const nums = [...pagination.querySelectorAll('a[href]')]
         .map(a => parseInt(a.textContent.trim(), 10))
@@ -158,7 +155,15 @@ async function scrapePage(page, url) {
       console.log('Pagination numbers:', JSON.stringify(nums));
       if (nums.length > 0) totalPages = Math.max(...nums);
     } else {
-      console.log('No .app-pagination found');
+      const allPageLinks = [...document.querySelectorAll('a[href*="page="]')]
+        .map(a => parseInt(a.textContent.trim(), 10))
+        .filter(n => !isNaN(n));
+      if (allPageLinks.length > 0) {
+        totalPages = Math.max(...allPageLinks);
+        console.log('Pagination from page= links:', JSON.stringify(allPageLinks));
+      } else {
+        console.log('No pagination found');
+      }
     }
 
     return { events, totalPages };
