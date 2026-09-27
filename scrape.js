@@ -47,19 +47,26 @@ function isSameDay(a, b) {
 }
 
 async function scrapePage(page, url) {
+  // Forward browser console to Node stdout so debug logs appear in Actions
+  page.removeAllListeners('console');
+  page.on('console', msg => console.log('[browser]', msg.text()));
+
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.waitForTimeout(3000);
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(1000);
 
-  // Wait for either event cards or pagination to appear
   await Promise.race([
     page.waitForSelector('a[data-testid="event-teaser-link"]', { timeout: 6000 }).catch(() => {}),
     page.waitForSelector('a[data-offer-id]', { timeout: 6000 }).catch(() => {}),
   ]);
-
-  // Also wait for pagination if present
   await page.waitForSelector('.app-pagination', { timeout: 5000 }).catch(() => {});
+
+  // Dump raw HTML for inspection when 0 events found
+  const html = await page.content();
+  if (!fs.existsSync('data')) fs.mkdirSync('data');
+  fs.writeFileSync('data/debug-page.html', html);
+  console.log('Page HTML saved to data/debug-page.html (' + html.length + ' bytes)');
 
   return await page.evaluate(() => {
     // ── Image map from Nuxt hydration data ───────────────────────────────
@@ -71,12 +78,8 @@ async function scrapePage(page, url) {
         const uuidAtIndex = {};
         const imageAtIndex = {};
         nuxtData.forEach((val, i) => {
-          if (typeof val === 'string' && /^[0-9a-f-]{36}$/.test(val)) {
-            uuidAtIndex[i] = val;
-          }
-          if (typeof val === 'string' && val.startsWith('https://images.uitdatabank.be/')) {
-            imageAtIndex[i] = val;
-          }
+          if (typeof val === 'string' && /^[0-9a-f-]{36}$/.test(val)) uuidAtIndex[i] = val;
+          if (typeof val === 'string' && val.startsWith('https://images.uitdatabank.be/')) imageAtIndex[i] = val;
         });
         nuxtData.forEach(val => {
           if (val && typeof val === 'object' && !Array.isArray(val) && 'id' in val && 'images' in val) {
@@ -91,9 +94,9 @@ async function scrapePage(page, url) {
             }
           }
         });
-      } catch (e) {
-        console.log('Nuxt image extraction failed');
-      }
+      } catch (e) { console.log('Nuxt image extraction failed:', e.message); }
+    } else {
+      console.log('No #__NUXT_DATA__ element found');
     }
 
     // ── Try multiple card selectors ───────────────────────────────────────
@@ -101,31 +104,28 @@ async function scrapePage(page, url) {
       'a[data-testid="event-teaser-link"]',
       'a[data-offer-id]',
       'a[data-testid="event-card-link"]',
+      'article.app-event-teaser',
     ];
 
     let cards = [];
     let usedSelector = 'none';
     for (const sel of SELECTORS) {
       const found = document.querySelectorAll(sel);
-      if (found.length > 0) {
-        cards = [...found];
-        usedSelector = sel;
-        break;
-      }
+      if (found.length > 0) { cards = [...found]; usedSelector = sel; break; }
     }
 
-    // ── Debug info when 0 cards found ─────────────────────────────────────
+    // ── Debug when 0 cards found ──────────────────────────────────────────
     if (cards.length === 0) {
-      const allTestIds = [...document.querySelectorAll('[data-testid]')]
+      console.log('DEBUG page title:', document.title);
+      console.log('DEBUG body text preview:', document.body?.innerText?.substring(0, 500));
+      const testIds = [...document.querySelectorAll('[data-testid]')]
         .map(el => el.getAttribute('data-testid'))
         .filter((v, i, a) => a.indexOf(v) === i);
-      const allOfferIds = document.querySelectorAll('[data-offer-id]').length;
-      const pageTitle = document.title;
-      console.log('DEBUG 0 cards — page title:', pageTitle);
-      console.log('DEBUG all data-testid values:', JSON.stringify(allTestIds));
-      console.log('DEBUG elements with data-offer-id:', allOfferIds);
+      console.log('DEBUG data-testid values:', JSON.stringify(testIds));
+      console.log('DEBUG data-offer-id count:', document.querySelectorAll('[data-offer-id]').length);
+      console.log('DEBUG #__NUXT_DATA__ present:', !!document.querySelector('#__NUXT_DATA__'));
     } else {
-      console.log('Using selector:', usedSelector, '→', cards.length, 'cards');
+      console.log('Selector used:', usedSelector, '→', cards.length, 'cards');
     }
 
     // ── Scrape cards ──────────────────────────────────────────────────────
@@ -148,14 +148,14 @@ async function scrapePage(page, url) {
       });
     });
 
-    // ── Total pages from pagination ───────────────────────────────────────
+    // ── Pagination ────────────────────────────────────────────────────────
     let totalPages = 1;
     const pagination = document.querySelector('.app-pagination');
     if (pagination) {
       const nums = [...pagination.querySelectorAll('a[href]')]
         .map(a => parseInt(a.textContent.trim(), 10))
         .filter(n => !isNaN(n));
-      console.log('Pagination numbers found:', JSON.stringify(nums));
+      console.log('Pagination numbers:', JSON.stringify(nums));
       if (nums.length > 0) totalPages = Math.max(...nums);
     } else {
       console.log('No .app-pagination found');
