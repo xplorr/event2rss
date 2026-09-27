@@ -41,6 +41,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add data/events.json rss/events.xml || true
+          git add data/events.json data/debug-page.html rss/events.xml || true
           git diff --staged --quiet || git commit -m "Update events RSS $(date)"
           git push
+          
