@@ -114,9 +114,10 @@ async function scrapePage(page, url) {
         .filter((v, i, a) => a.indexOf(v) === i);
       console.log('DEBUG 0 cards — title:', document.title);
       console.log('DEBUG data-testid values:', JSON.stringify(testIds));
-      console.log('DEBUG data-offer-id count:', document.querySelectorAll('[data-offer-id]').length);
     } else {
       console.log('Selector:', usedSelector, '→', cards.length, 'cards');
+      // Log first card HTML so we can see its structure
+      console.log('FIRST CARD HTML:', cards[0].outerHTML.substring(0, 1500));
     }
 
     // ── Scrape cards ──────────────────────────────────────────────────────
@@ -136,12 +137,13 @@ async function scrapePage(page, url) {
       });
     });
 
-    // ── Pagination — try multiple selectors ───────────────────────────────
+    // ── Pagination ────────────────────────────────────────────────────────
     let totalPages = 1;
     const paginationSelectors = [
       '.app-pagination',
       '[class*="pagination"]',
-      'nav[aria-label*="paginat"]',
+      '[class*="paging"]',
+      'nav[aria-label]',
     ];
     let pagination = null;
     for (const sel of paginationSelectors) {
@@ -155,6 +157,7 @@ async function scrapePage(page, url) {
       console.log('Pagination numbers:', JSON.stringify(nums));
       if (nums.length > 0) totalPages = Math.max(...nums);
     } else {
+      // Fallback: any link with page= in href
       const allPageLinks = [...document.querySelectorAll('a[href*="page="]')]
         .map(a => parseInt(a.textContent.trim(), 10))
         .filter(n => !isNaN(n));
@@ -162,7 +165,14 @@ async function scrapePage(page, url) {
         totalPages = Math.max(...allPageLinks);
         console.log('Pagination from page= links:', JSON.stringify(allPageLinks));
       } else {
-        console.log('No pagination found');
+        // Log all nav elements to find what's there
+        const navs = [...document.querySelectorAll('nav, [role="navigation"]')]
+          .map(el => el.className + ' | ' + el.getAttribute('aria-label'));
+        console.log('All nav elements:', JSON.stringify(navs));
+        const paginationDivs = [...document.querySelectorAll('[class*="page"], [class*="pagination"]')]
+          .map(el => el.tagName + '.' + el.className)
+          .slice(0, 10);
+        console.log('Elements with page/pagination in class:', JSON.stringify(paginationDivs));
       }
     }
 
