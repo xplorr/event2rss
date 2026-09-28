@@ -253,7 +253,7 @@ async function scrapeAllEvents() {
 
     console.log(`Loaded all results after ${clickCount} extra clicks`);
     const result = await scrapePage(listPage, baseUrl); // now scrape the fully-loaded page
-    let allEvents = result.events;
+    allEvents = result.events;
     console.log(`Total events before filter: ${allEvents.length}`);
 
     console.log(`Total events: ${allEvents.length}`);
