@@ -39,10 +39,7 @@ function parseDutchDateField(dateText, reference) {
     return { start: new Date(reference), end: end || new Date(reference) };
   }
 
-  const parts = dateText.split('-').map(p => p.trim()).filter(Boolean);
-  
   // ... rest unchanged
-  if (!dateText) return { start: null, end: null };
   const parts = dateText.split('-').map(p => p.trim()).filter(Boolean);
   if (parts.length === 1) {
     const start = parseSingleDutchDate(parts[0], reference);
