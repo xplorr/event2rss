@@ -32,7 +32,7 @@ jobs:
 
       - name: Scrape events
         run: node scrape.js
-        timeout-minutes: 60
+        timeout-minutes: 75
 
       - name: Generate RSS
         run: node json-to-rss.js
