@@ -26,6 +26,23 @@ function parseSingleDutchDate(chunk, reference) {
 
 function parseDutchDateField(dateText, reference) {
   if (!dateText) return { start: null, end: null };
+
+  // Relative Dutch words meaning "today"
+  const lower = dateText.toLowerCase().trim();
+  if (lower === 'vandaag' || lower === 'vanavond' || lower === 'hedenmiddag') {
+    return { start: new Date(reference), end: new Date(reference) };
+  }
+
+  // "Tot do 16 okt" means an ongoing event ending on that date — treat start as reference
+  if (lower.startsWith('tot ')) {
+    const end = parseSingleDutchDate(lower.replace(/^tot\s+/i, ''), reference);
+    return { start: new Date(reference), end: end || new Date(reference) };
+  }
+
+  const parts = dateText.split('-').map(p => p.trim()).filter(Boolean);
+  
+  // ... rest unchanged
+  if (!dateText) return { start: null, end: null };
   const parts = dateText.split('-').map(p => p.trim()).filter(Boolean);
   if (parts.length === 1) {
     const start = parseSingleDutchDate(parts[0], reference);
@@ -94,31 +111,27 @@ async function scrapePage(page, url) {
       } catch (e) { console.log('Nuxt image extraction failed:', e.message); }
     }
 
-    // ── Card selectors — concert page first, events page second ───────────
-    const SELECTORS = [
-      'a[data-testid="event-search-card-link"]',
-      'a[data-testid="event-teaser-link"]',
-      'a[data-offer-id]',
-    ];
 
-    let cards = [];
-    let usedSelector = 'none';
-    for (const sel of SELECTORS) {
-      const found = document.querySelectorAll(sel);
-      if (found.length > 0) { cards = [...found]; usedSelector = sel; break; }
-    }
+    // ── Card selectors — wrapper div holds data-offer-id ─────────────────
+    const wrappers = document.querySelectorAll('div[data-offer-id]');
+    const events = [];
 
-    if (cards.length === 0) {
-      const testIds = [...document.querySelectorAll('[data-testid]')]
-        .map(el => el.getAttribute('data-testid'))
-        .filter((v, i, a) => a.indexOf(v) === i);
-      console.log('DEBUG 0 cards — title:', document.title);
-      console.log('DEBUG data-testid values:', JSON.stringify(testIds));
-    } else {
-      console.log('Selector:', usedSelector, '→', cards.length, 'cards');
-      // Log first card HTML so we can see its structure
-      console.log('FIRST CARD HTML:', cards[0].outerHTML.substring(0, 1500));
-    }
+    wrappers.forEach(wrapper => {
+      const id   = wrapper.getAttribute('data-offer-id') || '';
+      const link = wrapper.querySelector('a.app-search-result-card__hit')?.href || '';
+      const title    = wrapper.querySelector('.app-search-result-card__title')?.textContent?.trim() || '';
+      const date     = wrapper.querySelector('.app-period-calendar-summary')?.textContent?.trim() || '';
+      const location = wrapper.querySelector('.app-event-search-card__location-name')?.textContent?.trim() || '';
+      const type     = wrapper.querySelector('.app-tag__label')?.textContent?.trim() || '';
+      const price    = wrapper.querySelector('.app-search-result-card-meta-row__text:last-of-type')?.textContent?.trim() || '';
+      if (title) events.push({
+        id, title, date, location, type, price,
+        description: '', organiser: '',
+        image: imageByOfferId[id] || '',
+        link
+      });
+    });
+    
 
     // ── Scrape cards ──────────────────────────────────────────────────────
     const events = [];
@@ -224,15 +237,28 @@ async function scrapeAllEvents() {
     let allEvents = firstResult.events;
     const totalPages = Math.min(firstResult.totalPages, MAX_PAGES);
 
-    for (let p = 2; p <= totalPages; p++) {
-      const url = `${baseUrl}&page=${p}`;
-      console.log(`Scraping page ${p}/${totalPages}`);
-      const result = await scrapePage(listPage, url);
-      console.log(`  ${result.events.length} events`);
-      if (!result.events.length) break;
-      allEvents = allEvents.concat(result.events);
-      await listPage.waitForTimeout(500);
+    // Load all results by clicking "Meer resultaten" until it disappears
+    console.log('Loading page and clicking "Meer resultaten"...');
+    await listPage.goto(baseUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await listPage.waitForTimeout(3000);
+
+    let clickCount = 0;
+    while (clickCount < MAX_PAGES) {
+      const loadMoreBtn = await listPage.$('button.app-button.app-button--dark');
+      if (!loadMoreBtn) break;
+      const btnText = await listPage.evaluate(b => b.textContent?.trim(), loadMoreBtn);
+      if (!btnText?.includes('Meer')) break;
+
+      console.log(`  Clicking "Meer resultaten" (click ${clickCount + 1})`);
+      await loadMoreBtn.click();
+      await listPage.waitForTimeout(2000);
+      clickCount++;
     }
+
+    console.log(`Loaded all results after ${clickCount} extra clicks`);
+    const result = await scrapePage(listPage, baseUrl); // now scrape the fully-loaded page
+    let allEvents = result.events;
+    console.log(`Total events before filter: ${allEvents.length}`);
 
     console.log(`Total events: ${allEvents.length}`);
 
