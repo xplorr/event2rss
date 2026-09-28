@@ -131,7 +131,6 @@ async function scrapePage(page, url) {
     
 
     // ── Scrape cards ──────────────────────────────────────────────────────
-    const events = [];
     cards.forEach((card, index) => {
       const id       = card.getAttribute('data-offer-id') || `event-${index}`;
       const title    = card.querySelector('.app-event-teaser__title, [class*="title"] h2, [class*="title"] h3, h2, h3')?.textContent?.trim() || '';
