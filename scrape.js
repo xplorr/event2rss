@@ -92,6 +92,12 @@ function parseDutchDateField(dateText, target, today) {
   // "Tot vr 16 okt": already running before the target date -> never "starts on" it
   if (/^tot\b/.test(text)) return { start: null, end: null, reason: 'ongoing' };
 
+  // "Vanaf ma 5 okt": the event's first occurrence — treat as starting exactly then
+  if (/^vanaf\b/.test(text)) {
+    const start = parseSingleDutchDate(text.replace(/^vanaf\s+/i, ''), target);
+    return start ? { start, end: start } : { start: null, end: null, reason: 'unparseable' };
+  }
+
   // Relative words
   if (/^van(daag|avond|middag|morgen|nacht)$/.test(text)) {
     return { start: today, end: today };
@@ -169,9 +175,9 @@ function collectImages(node, store) {
 
 async function loadAllResults(page, url) {
   console.log('Loading list page...');
-  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.waitForSelector(CARD_SELECTOR, { timeout: 15000 }).catch(() => {
-    console.log('  No event cards appeared within 15s');
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForSelector(CARD_SELECTOR, { timeout: 20000 }).catch(() => {
+    console.log('  No event cards appeared within 20s');
   });
   await sleep(1500);
 
@@ -179,27 +185,50 @@ async function loadAllResults(page, url) {
   while (clicks < MAX_CLICKS) {
     const before = await page.evaluate(sel => document.querySelectorAll(sel).length, CARD_SELECTOR);
 
-    // Click via the DOM so cookie banners/overlays cannot intercept the click
-    const clicked = await page.evaluate(() => {
-      const btn = [...document.querySelectorAll('.app-offers-list__footer button')]
+    // Find the button as a real ElementHandle so we can scroll to it and use
+    // Puppeteer's native click (more reliable against Vue click handlers than
+    // a JS-dispatched .click() call, and avoids overlay/visibility issues).
+    const btnHandle = await page.evaluateHandle(() => {
+      return [...document.querySelectorAll('.app-offers-list__footer button')]
         .find(b => /meer resultaten/i.test(b.textContent || ''));
-      if (!btn) return false;
-      btn.click();
-      return true;
     });
+    const btn = btnHandle.asElement();
 
-    if (!clicked) break; // no "Meer resultaten" button left: everything is loaded
+    if (!btn) {
+      console.log('  No "Meer resultaten" button found — all results loaded');
+      break;
+    }
+
+    await btn.evaluate(el => el.scrollIntoView({ block: 'center' }));
+    await sleep(300);
+
+    let grew = false;
+    // Try up to 2 clicks in case the first one doesn't register (debounced button)
+    for (let attempt = 1; attempt <= 2 && !grew; attempt++) {
+      try {
+        await btn.click();
+      } catch (e) {
+        console.log('  Click failed:', e.message);
+        break;
+      }
+      grew = await page
+        .waitForFunction((sel, n) => document.querySelectorAll(sel).length > n,
+          { timeout: 15000 }, CARD_SELECTOR, before)
+        .then(() => true)
+        .catch(() => false);
+      if (!grew && attempt === 1) console.log('  No growth after click, retrying once...');
+    }
 
     clicks++;
-    const grew = await page
-      .waitForFunction((sel, n) => document.querySelectorAll(sel).length > n, { timeout: 10000 }, CARD_SELECTOR, before)
-      .then(() => true)
-      .catch(() => false);
-
     const after = await page.evaluate(sel => document.querySelectorAll(sel).length, CARD_SELECTOR);
     console.log(`  Click ${clicks}: ${before} -> ${after} cards`);
 
-    if (!grew) break;
+    await btnHandle.dispose();
+
+    if (!grew) {
+      console.log('  Card count did not grow after retry — stopping');
+      break;
+    }
     await sleep(500);
   }
 
