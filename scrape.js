@@ -1,8 +1,8 @@
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 
-// Safety limit: max number of "Meer resultaten" clicks (~10 events per click)
-const MAX_CLICKS = 50;
+// Safety limit: max number of pages to fetch (page=1..MAX_PAGES)
+const MAX_PAGES = 50;
 
 // Wrapper div that carries data-offer-id for every event card in the list
 const CARD_SELECTOR = '.app-event-search-card-link[data-offer-id]';
@@ -81,6 +81,7 @@ function parseSingleDutchDate(chunk, reference) {
 //   "Di 14 jul"               single date
 //   "Ma 25 jun - do 23 jul"   span
 //   "Tot vr 16 okt"           ongoing event that started earlier -> reason 'ongoing'
+//   "Vanaf ma 5 okt"          event's first occurrence -> treat as starting then
 //   "Vandaag" / "Vanavond" / "Morgen" / "Overmorgen"
 //   "Deze vrijdag" / "Volgende maandag"
 // Returns { start, end, reason }.
@@ -92,7 +93,7 @@ function parseDutchDateField(dateText, target, today) {
   // "Tot vr 16 okt": already running before the target date -> never "starts on" it
   if (/^tot\b/.test(text)) return { start: null, end: null, reason: 'ongoing' };
 
-  // "Vanaf ma 5 okt": the event's first occurrence — treat as starting exactly then
+  // "Vanaf ma 5 okt": this is the event's first occurrence — the start date itself
   if (/^vanaf\b/.test(text)) {
     const start = parseSingleDutchDate(text.replace(/^vanaf\s+/i, ''), target);
     return start ? { start, end: start } : { start: null, end: null, reason: 'unparseable' };
@@ -115,7 +116,6 @@ function parseDutchDateField(dateText, target, today) {
   const wd = text.match(/^(?:deze |volgende |komende )?(maandag|dinsdag|woensdag|donderdag|vrijdag|zaterdag|zondag)$/);
   if (wd) {
     const dow = DUTCH_WEEKDAYS[wd[1]];
-    // The list is already filtered on the target date, so a matching weekday means the target date
     if (target.getDay() === dow) return { start: target, end: target };
     let d = new Date(today);
     while (d.getDay() !== dow) d = addDays(d, 1);
@@ -147,8 +147,8 @@ function isSameDay(a, b) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Image collection from GraphQL responses (events loaded via "Meer resultaten"
-// are not part of the initial Nuxt hydration payload)
+// Image collection from GraphQL responses (fallback when the Nuxt hydration
+// payload of a given page doesn't carry a particular event's image)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -170,76 +170,19 @@ function collectImages(node, store) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// List page: load everything, then extract
+// List page: fetch one page, extract cards + image map
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function loadAllResults(page, url) {
-  console.log('Loading list page...');
+async function scrapeListPage(page, url) {
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
-  await page.waitForSelector(CARD_SELECTOR, { timeout: 20000 }).catch(() => {
-    console.log('  No event cards appeared within 20s');
-  });
-  await sleep(1500);
+  await page.waitForSelector(CARD_SELECTOR, { timeout: 15000 }).catch(() => {});
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await sleep(1000);
 
-  let clicks = 0;
-  while (clicks < MAX_CLICKS) {
-    const before = await page.evaluate(sel => document.querySelectorAll(sel).length, CARD_SELECTOR);
-
-    // Find the button as a real ElementHandle so we can scroll to it and use
-    // Puppeteer's native click (more reliable against Vue click handlers than
-    // a JS-dispatched .click() call, and avoids overlay/visibility issues).
-    const btnHandle = await page.evaluateHandle(() => {
-      return [...document.querySelectorAll('.app-offers-list__footer button')]
-        .find(b => /meer resultaten/i.test(b.textContent || ''));
-    });
-    const btn = btnHandle.asElement();
-
-    if (!btn) {
-      console.log('  No "Meer resultaten" button found — all results loaded');
-      break;
-    }
-
-    await btn.evaluate(el => el.scrollIntoView({ block: 'center' }));
-    await sleep(300);
-
-    let grew = false;
-    // Try up to 2 clicks in case the first one doesn't register (debounced button)
-    for (let attempt = 1; attempt <= 2 && !grew; attempt++) {
-      try {
-        await btn.click();
-      } catch (e) {
-        console.log('  Click failed:', e.message);
-        break;
-      }
-      grew = await page
-        .waitForFunction((sel, n) => document.querySelectorAll(sel).length > n,
-          { timeout: 15000 }, CARD_SELECTOR, before)
-        .then(() => true)
-        .catch(() => false);
-      if (!grew && attempt === 1) console.log('  No growth after click, retrying once...');
-    }
-
-    clicks++;
-    const after = await page.evaluate(sel => document.querySelectorAll(sel).length, CARD_SELECTOR);
-    console.log(`  Click ${clicks}: ${before} -> ${after} cards`);
-
-    await btnHandle.dispose();
-
-    if (!grew) {
-      console.log('  Card count did not grow after retry — stopping');
-      break;
-    }
-    await sleep(500);
-  }
-
-  console.log(`All results loaded after ${clicks} click(s)`);
-}
-
-async function extractEvents(page) {
   return await page.evaluate((cardSelector) => {
     const log = (...a) => console.log('[scrape]', ...a);
 
-    // ── 1. Nuxt hydration data: offerId -> first image ───────────────────
+    // ── Nuxt hydration data: offerId -> first image ────────────────────
     const imageByOfferId = {};
     const nuxtEl = document.querySelector('#__NUXT_DATA__');
     if (nuxtEl) {
@@ -269,11 +212,9 @@ async function extractEvents(page) {
       } catch (e) {
         log('Nuxt image extraction failed:', e.message);
       }
-    } else {
-      log('No #__NUXT_DATA__ element found');
     }
 
-    // ── 2. Event cards ───────────────────────────────────────────────────
+    // ── Event cards ──────────────────────────────────────────────────────
     const clean = s => (s || '').replace(/[\u2060\u200b]/g, '').replace(/\s+/g, ' ').trim();
     const wrappers = document.querySelectorAll(cardSelector);
     const events = [];
@@ -281,14 +222,12 @@ async function extractEvents(page) {
     wrappers.forEach(w => {
       const id = w.getAttribute('data-offer-id') || '';
 
-      // Meta rows are identified by their icon (calendar, clock, map-pin, euro, users-round)
       const rowText = icon => {
         const row = [...w.querySelectorAll('.app-search-result-card-meta-row')]
           .find(r => r.querySelector('svg.lucide-' + icon));
         return row ? clean(row.querySelector('.app-search-result-card-meta-row__text')?.textContent) : '';
       };
 
-      // DOM fallback for the image (in case it is not in any data payload)
       let domImage = '';
       const media = w.querySelector('.app-search-result-card__media__img');
       if (media) {
@@ -383,7 +322,8 @@ async function scrapeAllEvents() {
       if (text.startsWith('[scrape]')) console.log('[browser]', text);
     });
 
-    // Collect images from every GraphQL response (covers events added by "Meer resultaten")
+    // Collect images from every GraphQL response as a fallback for events
+    // whose image isn't resolvable from that page's own Nuxt hydration data
     const graphqlImages = {};
     listPage.on('response', async res => {
       if (!res.url().includes('/api/graphql')) return;
@@ -400,11 +340,28 @@ async function scrapeAllEvents() {
 
     console.log('URL:', baseUrl);
 
-    // ── Load all results by clicking "Meer resultaten", then extract once ──
-    await loadAllResults(listPage, baseUrl);
-    await sleep(1000); // let the last GraphQL responses finish
+    // ── Fetch page 1, 2, 3, ... via &page=N until a page adds nothing new ──
+    let allEvents = [];
+    const seenIds = new Set();
 
-    let allEvents = await extractEvents(listPage);
+    for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
+      const pageUrl = pageNum === 1 ? baseUrl : `${baseUrl}&page=${pageNum}`;
+      console.log(`Scraping page ${pageNum}...`);
+
+      const pageEvents = await scrapeListPage(listPage, pageUrl);
+      const newEvents = pageEvents.filter(e => e.id && !seenIds.has(e.id));
+      newEvents.forEach(e => seenIds.add(e.id));
+
+      console.log(`  Page ${pageNum}: ${pageEvents.length} cards, ${newEvents.length} new`);
+
+      if (newEvents.length === 0) {
+        console.log(`  No new events on page ${pageNum} — stopping pagination`);
+        break;
+      }
+
+      allEvents = allEvents.concat(newEvents);
+      await sleep(400); // be polite between page loads
+    }
 
     if (allEvents.length === 0) {
       console.log('No events found. Page title:', await listPage.title());
@@ -412,9 +369,7 @@ async function scrapeAllEvents() {
       console.log('Body preview:', preview);
     }
 
-    // Remove duplicates, merge image sources
-    const seen = new Set();
-    allEvents = allEvents.filter(e => e.id && !seen.has(e.id) && seen.add(e.id));
+    // Fill in any missing images from GraphQL / DOM fallbacks
     allEvents.forEach(e => {
       e.image = e.image || graphqlImages[e.id] || e._domImage || '';
       delete e._domImage;
@@ -442,7 +397,8 @@ async function scrapeAllEvents() {
       }
       if (!isSameDay(start, targetDate)) return false;
 
-      // Store the resolved, unambiguous date so json2rss never has to re-parse Dutch display text
+      // Store the resolved, unambiguous date so json-to-rss never has to
+      // re-parse Dutch display text like "Di 14 jul" itself.
       event.startDateISO = start.toISOString();
       event.endDateISO = end ? end.toISOString() : start.toISOString();
 
